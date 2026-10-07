@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engage! - Advanced English Discussion Text</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Tailwind Config for Custom Colors/Fonts -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Nunito', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#4F46E5', // Indigo 600
+                        secondary: '#10B981', // Emerald 500
+                        accent: '#F59E0B', // Amber 500
+                        danger: '#EF4444', // Red 500
+                        background: '#EEF2FF', // Indigo 50
+                        card: '#FFFFFF',
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 3s infinite',
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Styles for Gamified Feel */
+        body {
+            background-color: #EEF2FF;
+            background-image: radial-gradient(#CBD5E1 1px, transparent 1px);
+            background-size: 20px 20px;
+            overflow-x: hidden;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 4px solid white;
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn-game {
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        .btn-game:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .btn-game:active {
+            transform: translateY(2px) scale(0.98);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #EEF2FF;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #A5B4FC;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #818CF8;
+        }
+
+        .hide { display: none !important; }
+        
+        /* Checkbox/Radio Custom Styling */
+        .custom-radio:checked + div {
+            border-color: #4F46E5;
+            background-color: #EEF2FF;
+        }
+        .custom-radio:checked + div .radio-inner {
+            background-color: #4F46E5;
+            transform: scale(1);
+        }
+        
+        .custom-checkbox:checked + div {
+            border-color: #10B981;
+            background-color: #ECFDF5;
+        }
+        .custom-checkbox:checked + div .check-icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
+
+    <!-- Firebase Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Environment Variables provided by environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'eng-learning-app-1';
+        const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+        let firebaseConfig = {};
+        try {
+            firebaseConfig = JSON.parse(firebaseConfigStr);
+        } catch (e) {
+            console.warn("Using default dummy config for local testing");
+            firebaseConfig = { apiKey: "dummy", projectId: "dummy" };
+        }
+
+        // Make Firebase instances available globally
+        window.db = null;
+        window.auth = null;
+        window.appId = appId;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.getDocs = getDocs;
+        window.onSnapshot = onSnapshot;
+        window.query = query;
+        window.orderBy = orderBy;
+        window.serverTimestamp = serverTimestamp;
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            window.db = getFirestore(app);
+            window.auth = getAuth(app);
+            
+            // Authentication
+            const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            if (token) {
+                signInWithCustomToken(window.auth, token).then(() => {
+                    console.log("Authenticated with custom token");
+                }).catch(e => console.error("Auth error:", e));
+            } else {
+                signInAnonymously(window.auth).then(() => {
+                    console.log("Authenticated anonymously");
+                }).catch(e => console.error("Anonymous auth error:", e));
+            }
+        } catch (error) {
+            console.error("Firebase initialization failed:", error);
+            // Fallback for visual testing without Firebase connection
+            window.firebaseError = true;
+        }
+    </script>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <script>
+        // --- State Management ---
+        const State = {
+            currentUser: { name: '', class: '', id: null, quizScore: 0, examScore: 0 },
+            audioEnabled: true,
+            currentScreen: 'screen-login',
+            currentModule: null,
+            quizData: { currentQuestionIndex: 0, score: 0 },
+            examData: { currentQuestionIndex: 0, score: 0, answers: {} }
+        };
+
+        // --- Audio Engine ---
+        class AudioEngine {
+            constructor() {
+                this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            playTone(frequency, type, duration, vol=0.1) {
+                if (!State.audioEnabled || this.audioCtx.state === 'suspended') return;
+                const osc = this.audioCtx.createOscillator();
+                const gainNode = this.audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(frequency, this.audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(vol, this.audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + duration);
+                osc.connect(gainNode);
+                gainNode.connect(this.audioCtx.destination);
+                osc.start();
+                osc.stop(this.audioCtx.currentTime + duration);
+            }
+
+            sfxClick() { this.playTone(600, 'sine', 0.1, 0.1); }
+            sfxCorrect() { 
+                this.playTone(523.25, 'sine', 0.1, 0.1); // C5
+                setTimeout(() => this.playTone(659.25, 'sine', 0.2, 0.1), 100); // E5
+            }
+            sfxWrong() { 
+                this.playTone(300, 'sawtooth', 0.2, 0.1); 
+                setTimeout(() => this.playTone(250, 'sawtooth', 0.3, 0.1), 150);
+            }
+            sfxWin() {
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                    setTimeout(() => this.playTone(freq, 'square', 0.3, 0.05), i * 150);
+                });
+            }
+
+            speak(text) {
+                if (!State.audioEnabled || !window.speechSynthesis) return;
+                window.speechSynthesis.cancel(); // Stop current speaking
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9; // Slightly slower for learning
+                window.speechSynthesis.speak(utterance);
+            }
+            
+            stopSpeak() {
+                if (window.speechSynthesis) window.speechSynthesis.cancel();
+            }
+        }
+        
+        const audio = new AudioEngine();
+
+        // Need user interaction to start AudioContext
+        document.addEventListener('click', () => {
+            if (audio.audioCtx.state === 'suspended') {
+                audio.audioCtx.resume();
+            }
+        }, { once: true });
+    </script>
+
+    <script>
+        // --- Content Data ---
+        const materialContent = {
+            title: "Discussion Text",
+            intro: "Have you ever seen people debating on TV? Or read articles where people argue about an issue from different perspectives? That's what a Discussion Text is all about!",
+            definition: "A Discussion Text is a text that presents a problematic discourse. This problem will be discussed from different viewpoints (pro and contra / positive and negative).",
+            purpose: "To present at least two points of view about an issue. It allows the reader to explore different perspectives before making an informed decision.",
+            structure: [
+                { name: "Issue", desc: "Stating the issue which is to be discussed. Usually includes a background statement." },
+                { name: "Arguments For (Pro)", desc: "Presenting the point in supporting the presented issue. Must be backed by evidence or examples." },
+                { name: "Arguments Against (Contra)", desc: "Presenting other points which disagree to the supporting point. Also needs evidence." },
+                { name: "Conclusion / Recommendation", desc: "Stating the writer's recommendation or conclusion based on the arguments presented." }
+            ],
+            languageFeatures: [
+                "Using simple present tense.",
+                "Using general nouns (e.g., alcohol, abortion, smoking).",
+                "Using relating verbs (e.g., is, are, have).",
+                "Using thinking verbs (e.g., feel, hope, believe).",
+                "Using additive, contrastive, and causal connectives (e.g., similarly, on the other hand, however, therefore).",
+                "Using modalities (e.g., must, should, could)."
+            ],
+            examples: [
+                {
+                    title: "The Advantages and Disadvantages of Distance Learning",
+                    text: `<p class="mb-2"><strong>(Issue)</strong> A few years ago, distance learning was seen as an inferior way but nowadays even famous and established traditional colleges and universities are providing distance learning courses and it is generally considered a way to improve one's life.</p>
+                           <p class="mb-2"><strong>(Arguments For)</strong> However, people still argue whether distance learning gives more advantage or disadvantage. Some of them who see the benefit of distance learning will say that distance learning needs no commuting. Of course it saves money and time that students would take. Furthermore, distance learning can be done at any student’s convenience. Most of the classes of distance learning are asynchronous. It means that students do not have to attend a lecture at a fixed particular time and place. Students can review the assignments and do their homework during off-hours or from home. Additionally, distance learning gives more accessibility. No one can deny it. People with limited mobility may encounter the problem when they take traditional class.</p>
+                           <p class="mb-2"><strong>(Arguments Against)</strong> On the other hand, distance learning has some disadvantages. First, distance learning requires highly motivated and responsible students. Without intrinsic motivation, students will easily fail. Second, distance learning provides no physical interaction. For some students, it can be an isolating experience. They miss the social interaction that comes with attending a traditional classroom.</p>
+                           <p><strong>(Conclusion)</strong> In conclusion, distance learning is a good alternative for those who are busy and highly motivated, but it may not be suitable for those who need physical interaction and lack self-discipline.</p>`
+                }
+            ]
+        };
+
+        // 25 Questions Total
+        // 1-10: Quiz Mode (Immediate Feedback)
+        // 11-25: Exam Mode (Mixed Types, Graded at end)
+        
+        const allQuestions = [
+            // --- QUIZ SECTION (Standard MC) ---
+            { id: 1, type: 'mc', section: 'quiz',
+              text: "What is the primary communicative purpose of a Discussion Text?",
+              options: ["To entertain the readers with a story.", "To present arguments from differing points of view about an issue.", "To persuade the reader that something should or should not be the case.", "To describe how something is accomplished through a sequence of actions.", "To retell events for the purpose of informing or entertaining."],
+              answer: 1,
+              explanation: "The main purpose of a discussion text is to explore an issue from at least two different perspectives (pro and contra) before reaching a conclusion."
+            },
+            { id: 2, type: 'mc', section: 'quiz',
+              text: "Which of the following is NOT a generic structure of a Discussion Text?",
+              options: ["Issue", "Arguments For", "Resolution", "Arguments Against", "Recommendation"],
+              answer: 2,
+              explanation: "'Resolution' is a part of Narrative text, not Discussion text. Discussion text ends with a Conclusion or Recommendation."
+            },
+            { id: 3, type: 'mc', section: 'quiz',
+              text: "Read the sentence: 'On the other hand, some experts argue that social media causes anxiety.' What language feature is used here?",
+              options: ["Additive connective", "Contrastive connective", "Temporal connective", "Causal connective", "Modality"],
+              answer: 1,
+              explanation: "'On the other hand' is a contrastive connective used to introduce an opposing viewpoint."
+            },
+            { id: 4, type: 'mc', section: 'quiz',
+              text: "Which tense is mostly used in writing a Discussion Text?",
+              options: ["Simple Past Tense", "Present Perfect Tense", "Simple Present Tense", "Future Continuous Tense", "Past Perfect Tense"],
+              answer: 2,
+              explanation: "Discussion texts generally discuss facts, current issues, and general truths, hence mostly utilizing the Simple Present Tense."
+            },
+            { id: 5, type: 'mc', section: 'quiz',
+              text: "In the 'Issue' paragraph, the writer usually...",
+              options: ["Gives their final recommendation.", "Lists all the negative impacts.", "Introduces the topic and states the problem.", "Presents strong evidence for the pro side.", "Summarizes all arguments."],
+              answer: 2,
+              explanation: "The 'Issue' section serves as an introduction, presenting the topic and stating the problem that will be discussed from different angles."
+            },
+            { id: 6, type: 'mc', section: 'quiz',
+              text: "What kind of verbs are 'believe', 'feel', and 'hope'?",
+              options: ["Action verbs", "Relating verbs", "Thinking/Mental verbs", "Saying verbs", "Modal verbs"],
+              answer: 2,
+              explanation: "These are thinking or mental verbs, often used in discussion texts to express opinions or thoughts."
+            },
+            { id: 7, type: 'mc', section: 'quiz',
+              text: "Why is it important to include 'Arguments Against' in a Discussion Text?",
+              options: ["To confuse the reader.", "To make the text longer.", "To show that the writer agrees with the negative side.", "To provide a balanced view of the issue.", "To attack the opposing side."],
+              answer: 3,
+              explanation: "A discussion text must be balanced. Including 'Arguments Against' ensures the issue is explored from multiple perspectives fairly."
+            },
+            { id: 8, type: 'mc', section: 'quiz',
+              text: "Which of these words is a modality?",
+              options: ["Because", "However", "Should", "Therefore", "Think"],
+              answer: 2,
+              explanation: "'Should' is a modal verb often used in the recommendation section to suggest a course of action."
+            },
+            { id: 9, type: 'mc', section: 'quiz',
+              text: "A Discussion Text is best suited for which of the following topics?",
+              options: ["How to make a cup of tea.", "My holiday in Bali.", "The pros and cons of implementing Full Day School.", "The biography of Albert Einstein.", "The description of my pet cat."],
+              answer: 2,
+              explanation: "Discussion texts deal with problematic issues that have pros and cons, like implementing full day school."
+            },
+            { id: 10, type: 'mc', section: 'quiz',
+              text: "What usually follows 'Arguments Against' in the generic structure?",
+              options: ["Orientation", "Issue", "More Arguments For", "Conclusion/Recommendation", "Reiteration"],
+              answer: 3,
+              explanation: "After presenting both sides (For and Against), the text concludes with a Conclusion or Recommendation."
+            },
+
+            // --- EXAM SECTION ---
+            // Simple MC (11-15)
+            { id: 11, type: 'mc', section: 'exam',
+              text: "Read this excerpt: 'Furthermore, implementing uniform rules helps reduce social inequality among students.' This sentence belongs to...",
+              options: ["Issue", "Argument For", "Argument Against", "Recommendation", "General Classification"],
+              answer: 1
+            },
+            { id: 12, type: 'mc', section: 'exam',
+              text: "Which connective is used to add more information to the same point of view?",
+              options: ["Nevertheless", "In contrast", "Moreover", "However", "On the contrary"],
+              answer: 2
+            },
+             { id: 13, type: 'mc', section: 'exam',
+              text: "If a text only presents one side of an argument strongly to convince the reader, it is most likely a...",
+              options: ["Discussion Text", "Hortatory Exposition", "Narrative Text", "Report Text", "Descriptive Text"],
+              answer: 1
+            },
+            { id: 14, type: 'mc', section: 'exam',
+              text: "In a conclusion, the writer should...",
+              options: ["Introduce a completely new argument.", "Leave the problem unsolved.", "Summarize points and optionally give a balanced recommendation.", "Insult the opposing side.", "Ask a rhetorical question only."],
+              answer: 2
+            },
+            { id: 15, type: 'mc', section: 'exam',
+              text: "Identify the general noun in this sentence: 'Nuclear energy is considered a clean power source by some scientists.'",
+              options: ["Considered", "Clean", "Power", "Nuclear energy", "Some"],
+              answer: 3
+            },
+
+            // MCMA - Multiple Choice Multiple Answers (16-20)
+            { id: 16, type: 'mcma', section: 'exam',
+              text: "Select ALL the Contrastive Connectives from the list below: (Select 3)",
+              options: ["However", "Additionally", "Nevertheless", "On the other hand", "Therefore", "Furthermore"],
+              answer: [0, 2, 3] // Indexes of correct options
+            },
+            { id: 17, type: 'mcma', section: 'exam',
+              text: "Which of the following topics are suitable for a Discussion Text? (Select 2)",
+              options: ["The history of the Roman Empire", "Should homework be banned?", "How to operate a washing machine", "The impact of Artificial Intelligence on jobs", "A review of the latest Spiderman movie"],
+              answer: [1, 3]
+            },
+            { id: 18, type: 'mcma', section: 'exam',
+              text: "Select ALL features that are typical of a Discussion Text: (Select 3)",
+              options: ["Use of Simple Past Tense", "Presents arguments FOR an issue", "Ends with a twist", "Use of mental/thinking verbs", "Presents arguments AGAINST an issue"],
+              answer: [1, 3, 4]
+            },
+            { id: 19, type: 'mcma', section: 'exam',
+              text: "Which statements represent 'Arguments Against' the use of smartphones in class? (Select 2)",
+              options: ["They provide quick access to educational resources.", "They can be a major source of distraction.", "They allow students to use helpful learning apps.", "They can lead to cheating during exams.", "They prepare students for a digital future."],
+              answer: [1, 3]
+            },
+            { id: 20, type: 'mcma', section: 'exam',
+              text: "Which of these are generic structures of Discussion Text? (Select 3)",
+              options: ["Orientation", "Issue", "Arguments For", "Complication", "Conclusion"],
+              answer: [1, 2, 4]
+            },
+
+            // Complex Categorization (21-25) - Represented as matching/categorizing
+            { id: 21, type: 'category', section: 'exam',
+              text: "Categorize the following connective based on its function: 'Consequently'",
+              categories: ["Additive (Adding)", "Contrastive (Contrasting)", "Causal (Cause/Effect)"],
+              answer: 2
+            },
+            { id: 22, type: 'category', section: 'exam',
+              text: "Categorize this statement regarding 'Homework': 'It takes away valuable family time.'",
+              categories: ["Pro (For Homework)", "Contra (Against Homework)", "Neutral / Issue statement"],
+              answer: 1
+            },
+            { id: 23, type: 'category', section: 'exam',
+              text: "Categorize this statement regarding 'Homework': 'Is homework truly beneficial for students?'",
+              categories: ["Pro (For Homework)", "Contra (Against Homework)", "Neutral / Issue statement"],
+              answer: 2
+            },
+            { id: 24, type: 'category', section: 'exam',
+              text: "Categorize the connective: 'Similarly'",
+              categories: ["Additive (Adding)", "Contrastive (Contrasting)", "Causal (Cause/Effect)"],
+              answer: 0
+            },
+            { id: 25, type: 'category', section: 'exam',
+              text: "Categorize this sentence part: 'In summary, while there are drawbacks, the benefits outweigh them.'",
+              categories: ["Issue", "Argument", "Conclusion"],
+              answer: 2
+            }
+        ];
+
+        const quizQuestions = allQuestions.filter(q => q.section === 'quiz');
+        const examQuestions = allQuestions.filter(q => q.section === 'exam');
+
+    </script>
+
+    <nav class="bg-primary text-white p-4 shadow-lg sticky top-0 z-50 transition-all duration-300" id="top-nav" style="display: none;">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-white text-primary rounded-full w-10 h-10 flex items-center justify-center font-bold text-xl shadow-inner">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <h1 class="text-xl font-black tracking-wider hidden sm:block">ENGAGE!</h1>
+            </div>
+            
+            <div class="flex items-center gap-2 sm:gap-4">
+                <!-- Visible Teacher Dashboard Button in Nav -->
+                <button onclick="openTeacherModal()" class="bg-indigo-700 hover:bg-indigo-600 text-white text-xs sm:text-sm font-bold px-3 py-2 rounded-xl flex items-center gap-2 transition shadow btn-game" title="Teacher Dashboard">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span class="hidden sm:inline">Dasbor Guru</span>
+                </button>
+
+                <div class="bg-indigo-800 px-4 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2 border border-indigo-500 hidden md:flex">
+                    <i class="fa-regular fa-circle-user"></i>
+                    <span id="nav-username">Student</span>
+                    <span class="text-indigo-300 text-xs bg-indigo-900 px-2 py-0.5 rounded-full" id="nav-class">Class</span>
+                </div>
+                
+                <button onclick="toggleAudio()" id="btn-audio" class="w-10 h-10 rounded-full bg-indigo-700 hover:bg-indigo-600 flex items-center justify-center transition shadow btn-game" title="Toggle Audio/Voice">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+                
+                <button onclick="goHome()" class="w-10 h-10 rounded-full bg-accent hover:bg-yellow-400 text-white flex items-center justify-center transition shadow btn-game" title="Main Menu">
+                    <i class="fa-solid fa-house"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 flex flex-col justify-center relative">
+        
+        <!-- ================= LOGIN SCREEN ================= -->
+        <section id="screen-login" class="max-w-md mx-auto w-full">
+            <div class="glass-card rounded-3xl p-8 text-center animate-[bounce-slow]">
+                <div class="w-24 h-24 bg-primary text-white rounded-full mx-auto flex items-center justify-center text-4xl mb-6 shadow-lg border-4 border-indigo-200">
+                    <i class="fa-solid fa-rocket"></i>
+                </div>
+                <h2 class="text-3xl font-black text-slate-800 mb-2">Ready to Learn?</h2>
+                <p class="text-slate-500 mb-8">Master Discussion Texts with fun activities!</p>
+                
+                <form id="login-form" class="space-y-4" onsubmit="handleLogin(event)">
+                    <div class="text-left">
+                        <label class="block text-sm font-bold text-slate-700 mb-1 ml-2">Your Name</label>
+                        <div class="relative">
+                            <i class="fa-regular fa-user absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" id="input-name" required placeholder="e.g. Budi Santoso" class="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-3 pl-10 pr-4 focus:outline-none focus:border-primary focus:ring-4 focus:ring-indigo-100 transition">
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1 ml-2">*Tip: Guru use "GuruAdmin"</p>
+                    </div>
+                    
+                    <div class="text-left">
+                        <label class="block text-sm font-bold text-slate-700 mb-1 ml-2">Your Class</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-chalkboard-user absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                            <select id="input-class" required class="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-3 pl-10 pr-4 focus:outline-none focus:border-primary focus:ring-4 focus:ring-indigo-100 transition appearance-none cursor-pointer">
+                                <option value="" disabled selected>Select your class...</option>
+                                <option value="XII-8">Class XII-8</option>
+                                <option value="XII-12">Class XII-12</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-primary hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl text-lg shadow-lg shadow-indigo-200 btn-game mt-6 flex items-center justify-center gap-2">
+                        Let's Go! <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </form>
+
+                <!-- Dedicated Visible Teacher Dashboard Button on Login -->
+                <div class="mt-6 pt-4 border-t border-slate-200/60">
+                    <button type="button" onclick="openTeacherModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-2xl text-sm transition btn-game flex items-center justify-center gap-2 border border-slate-300">
+                        <i class="fa-solid fa-user-tie text-primary"></i> Masuk Dasbor Guru (Teacher Access)
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= ICE BREAKING ================= -->
+        <section id="screen-ice" class="hide max-w-2xl mx-auto w-full text-center">
+            <div class="glass-card rounded-3xl p-10 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-2 bg-accent"></div>
+                <h2 class="text-3xl font-black text-slate-800 mb-2">Word Scramble!</h2>
+                <p class="text-slate-500 mb-8">Unscramble the debate-related word before time runs out!</p>
+                
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-8 mb-6">
+                    <div id="scramble-word" class="text-5xl md:text-6xl font-black tracking-widest text-primary mb-4 drop-shadow-sm"></div>
+                    <p class="text-sm text-slate-500 italic">Hint: <span id="scramble-hint" class="font-semibold text-slate-700"></span></p>
+                </div>
+
+                <div class="flex gap-2 justify-center mb-4">
+                    <input type="text" id="scramble-input" class="w-1/2 text-center text-2xl font-bold border-4 border-slate-200 rounded-xl py-2 uppercase focus:border-accent focus:outline-none transition" autocomplete="off">
+                    <button onclick="checkScramble()" class="bg-accent hover:bg-yellow-500 text-white font-bold py-2 px-6 rounded-xl text-lg shadow transition btn-game">Check</button>
+                </div>
+                
+                <div id="scramble-msg" class="h-8 font-bold text-lg hidden"></div>
+                
+                <button onclick="goHome()" class="mt-8 text-slate-400 hover:text-slate-600 underline font-semibold">Skip & Go Back</button>
+            </div>
+        </section>
+
+        <!-- ================= SIMULATION ================= -->
+        <section id="screen-simulation" class="hide max-w-4xl mx-auto w-full">
+            <div class="glass-card rounded-3xl p-6 md:p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-black text-slate-800">Structure Detective</h2>
+                    <button onclick="goHome()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-2xl"></i></button>
+                </div>
+                
+                <div class="bg-blue-50 text-blue-800 p-4 rounded-xl mb-6 border border-blue-200 flex gap-3 items-start">
+                    <i class="fa-solid fa-circle-info mt-1"></i>
+                    <div>
+                        <p class="font-bold">Instructions:</p>
+                        <p>Click on the paragraph that represents the <span id="sim-target" class="font-black underline bg-blue-200 px-1 rounded">Arguments Against</span>.</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-slate-700 cursor-pointer" id="sim-text-container">
+                    <!-- Paragraphs filled by JS -->
+                </div>
+                
+                <div id="sim-feedback" class="mt-6 p-4 rounded-xl font-bold text-center hide text-lg"></div>
+            </div>
+        </section>
+
+        <!-- ================= QUIZ & EXAM ENGINE ================= -->
+        <section id="screen-quiz" class="hide max-w-3xl mx-auto w-full">
+            <!-- Header Status -->
+            <div class="flex justify-between items-center mb-4 px-2">
+                <div class="bg-white px-4 py-2 rounded-full font-bold text-slate-600 shadow-sm border border-slate-200" id="quiz-mode-label">
+                    <i class="fa-solid fa-gamepad text-secondary mr-2"></i> Learning Quiz
+                </div>
+                <div class="bg-white px-4 py-2 rounded-full font-black text-primary shadow-sm border border-slate-200">
+                    <span id="q-current">1</span> / <span id="q-total">10</span>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-200 rounded-full h-2.5 mb-6 overflow-hidden">
+                <div class="bg-primary h-2.5 rounded-full transition-all duration-500 ease-out" id="quiz-progress" style="width: 10%"></div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="glass-card rounded-3xl p-6 md:p-8 relative">
+                <!-- TTS Button -->
+                <button onclick="readCurrentQuestion()" class="absolute top-6 right-6 text-slate-400 hover:text-primary transition" title="Read Question">
+                    <i class="fa-solid fa-volume-high text-xl"></i>
+                </button>
+
+                <h3 class="text-2xl font-bold text-slate-800 mb-6 pr-8 leading-snug" id="q-text">Question Text Goes Here?</h3>
+                
+                <div id="q-options" class="space-y-3">
+                    <!-- Options injected via JS -->
+                </div>
+
+                <div class="mt-8 flex justify-end">
+                    <button id="btn-submit-q" onclick="submitAnswer()" class="bg-primary hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg btn-game flex items-center gap-2">
+                        Submit <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Feedback Overlay for Quiz Mode -->
+        <div id="feedback-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-3xl max-w-md w-full p-8 text-center transform scale-90 transition-transform duration-300 shadow-2xl" id="feedback-modal">
+                <div id="feedback-icon" class="w-20 h-20 rounded-full mx-auto flex items-center justify-center text-4xl mb-4 shadow-inner">
+                    <!-- Icon injected -->
+                </div>
+                <h3 id="feedback-title" class="text-3xl font-black mb-2">Title</h3>
+                <p id="feedback-desc" class="text-slate-600 mb-6 pb-6 border-b border-slate-100 leading-relaxed"></p>
+                <button onclick="nextQuestion()" class="w-full bg-slate-800 hover:bg-black text-white font-bold py-3 rounded-xl transition btn-game">
+                    Continue <i class="fa-solid fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <section id="screen-result" class="hide max-w-2xl mx-auto w-full text-center">
+            <div class="glass-card rounded-3xl p-10">
+                <div class="w-32 h-32 mx-auto mb-6 relative">
+                    <svg viewBox="0 0 36 36" class="w-full h-full text-slate-200">
+                        <path class="stroke-current" fill="none" stroke-width="3" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <path id="score-ring" class="stroke-primary" stroke-dasharray="0, 100" fill="none" stroke-width="3" stroke-linecap="round" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-4xl font-black text-primary" id="result-score">0</span>
+                    </div>
+                </div>
+                
+                <h2 class="text-3xl font-black text-slate-800 mb-2" id="result-title">Great Job!</h2>
+                <p class="text-slate-500 mb-8" id="result-msg">You've completed the section.</p>
+                
+                <button onclick="goHome()" class="bg-primary hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-xl shadow btn-game">
+                    Return to Menu
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= TEACHER DASHBOARD ================= -->
+        <section id="screen-dashboard" class="hide max-w-6xl mx-auto w-full">
+            <div class="glass-card rounded-3xl p-6 md:p-8">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-slate-200 pb-6">
+                    <div>
+                        <h2 class="text-3xl font-black text-slate-800 flex items-center gap-3">
+                            <i class="fa-solid fa-user-tie text-primary"></i> Teacher Dashboard
+                        </h2>
+                        <p class="text-slate-500 mt-1">Real-time student progress & reporting</p>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="exportExcel()" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition">
+                            <i class="fa-solid fa-file-excel"></i> Excel
+                        </button>
+                        <button onclick="exportPDF()" class="bg-red-100 hover:bg-red-200 text-red-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition">
+                            <i class="fa-solid fa-file-pdf"></i> PDF
+                        </button>
+                        <button onclick="exportWord()" class="bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition">
+                            <i class="fa-solid fa-file-word"></i> Word
+                        </button>
+                        <button onclick="goHome()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-4 rounded-lg ml-2 transition">
+                            Exit
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm" id="export-target">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 text-sm uppercase tracking-wider border-b border-slate-200">
+                                    <th class="p-4 font-bold">Name</th>
+                                    <th class="p-4 font-bold">Class</th>
+                                    <th class="p-4 font-bold text-center">Quiz Score</th>
+                                    <th class="p-4 font-bold text-center">Exam Score</th>
+                                    <th class="p-4 font-bold text-right">Completed At</th>
+                                </tr>
+                            </thead>
+                            <tbody id="db-table-body" class="divide-y divide-slate-100">
+                                <!-- Data injected via JS -->
+                                <tr><td colspan="5" class="p-8 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading data from Cloud...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Teacher Password Verification Modal -->
+    <div id="modal-teacher-auth" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden items-center justify-center p-4">
+        <div class="glass-card rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl">
+            <div class="w-16 h-16 bg-indigo-100 text-primary rounded-full mx-auto flex items-center justify-center text-2xl mb-4">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h3 class="text-2xl font-black text-slate-800 mb-1">Akses Dasbor Guru</h3>
+            <p class="text-xs text-slate-500 mb-4">Masukkan kata sandi untuk mengakses rekap nilai siswa.</p>
+            
+            <input type="password" id="input-teacher-pass" placeholder="Password Guru" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-2 px-4 mb-3 text-center focus:outline-none focus:border-primary font-bold" onkeypress="if(event.key === 'Enter') verifyTeacherPassword()">
+            <p id="teacher-pass-error" class="text-xs text-red-500 font-bold mb-3 hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i> Kata sandi salah! Silakan coba lagi.</p>
+
+            <div class="flex gap-2">
+                <button onclick="closeTeacherModal()" class="w-1/2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 rounded-xl transition">Batal</button>
+                <button onclick="verifyTeacherPassword()" class="w-1/2 bg-primary hover:bg-indigo-700 text-white font-bold py-2 rounded-xl transition shadow btn-game">Masuk</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Initialization & UI Helpers ---
+        function showScreen(screenId) {
+            document.querySelectorAll('main > section').forEach(s => s.classList.add('hide'));
+            document.getElementById(screenId).classList.remove('hide');
+            State.currentScreen = screenId;
+            audio.stopSpeak();
+            window.scrollTo(0, 0);
+
+            // Hide nav on login
+            if(screenId === 'screen-login') {
+                document.getElementById('top-nav').style.display = 'none';
+            } else {
+                document.getElementById('top-nav').style.display = 'block';
+            }
+        }
+
+        function goHome() {
+            if(State.currentUser.name === 'GuruAdmin') {
+                showScreen('screen-dashboard');
+                loadDashboardData();
+            } else {
+                showScreen('screen-menu');
+            }
+        }
+
+        function toggleAudio() {
+            State.audioEnabled = !State.audioEnabled;
+            const btn = document.getElementById('btn-audio');
+            if (State.audioEnabled) {
+                btn.classList.replace('bg-slate-400', 'bg-indigo-700');
+                btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                audio.sfxClick();
+            } else {
+                btn.classList.replace('bg-indigo-700', 'bg-slate-400');
+                btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+                audio.stopSpeak();
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            audio.sfxClick();
+            const name = document.getElementById('input-name').value.trim();
+            const cls = document.getElementById('input-class').value;
+            
+            if (name.toLowerCase() === 'guruadmin') {
+                openTeacherModal();
+                return;
+            }
+
+            State.currentUser = { name, class: cls, quizScore: 0, examScore: 0 };
+            document.getElementById('nav-username').innerText = name;
+            document.getElementById('nav-class').innerText = cls;
+            
+            // Populate Material content once on login
+            renderMaterial();
+            
+            showScreen('screen-menu');
+        }
+
+        // --- Teacher Auth Modal Logic ---
+        function openTeacherModal() {
+            document.getElementById('modal-teacher-auth').classList.remove('hidden');
+            document.getElementById('modal-teacher-auth').classList.add('flex');
+            document.getElementById('input-teacher-pass').value = '';
+            document.getElementById('teacher-pass-error').classList.add('hidden');
+            document.getElementById('input-teacher-pass').focus();
+        }
+
+        function closeTeacherModal() {
+            document.getElementById('modal-teacher-auth').classList.add('hidden');
+            document.getElementById('modal-teacher-auth').classList.remove('flex');
+        }
+
+        function verifyTeacherPassword() {
+            const pass = document.getElementById('input-teacher-pass').value;
+            if (pass === 'skoijuara') {
+                closeTeacherModal();
+                State.currentUser = { name: 'GuruAdmin', class: 'Admin' };
+                document.getElementById('nav-username').innerText = 'Teacher Mode';
+                document.getElementById('nav-class').innerText = 'Admin';
+                showScreen('screen-dashboard');
+                loadDashboardData();
+                audio.sfxCorrect();
+            } else {
+                audio.sfxWrong();
+                document.getElementById('teacher-pass-error').classList.remove('hidden');
+            }
+        }
+
+        // --- Material Renderer ---
+        function renderMaterial() {
+            document.getElementById('mat-def').innerHTML = materialContent.definition;
+            document.getElementById('mat-purpose').innerHTML = materialContent.purpose;
+            
+            const structHtml = materialContent.structure.map((s, i) => `
+                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                    <div class="font-bold text-primary mb-1">${i+1}. ${s.name}</div>
+                    <div class="text-sm text-slate-600">${s.desc}</div>
+                </div>
+            `).join('');
+            document.getElementById('mat-structure').innerHTML = structHtml;
+
+            const langHtml = materialContent.languageFeatures.map(l => `
+                <li class="flex items-start gap-2">
+                    <i class="fa-solid fa-check text-secondary mt-1 text-sm"></i>
+                    <span>${l}</span>
+                </li>
+            `).join('');
+            document.getElementById('mat-lang').innerHTML = langHtml;
+
+            document.getElementById('mat-ex-title').innerText = materialContent.examples[0].title;
+            document.getElementById('mat-ex-content').innerHTML = materialContent.examples[0].text;
+        }
+
+        // --- STREAMING_CHUNK:Ice Breaking Logic ---
+        const scrambles = [
+            { w: "ISSUE", h: "The main problem discussed" },
+            { w: "ARGUMENT", h: "A reason given to support or oppose an idea" },
+            { w: "EVIDENCE", h: "Facts or info proving a belief is true" }
+        ];
+        let currentScramble = {};
+
+        function startIceBreaking() {
+            showScreen('screen-ice');
+            audio.sfxClick();
+            currentScramble = scrambles[Math.floor(Math.random() * scrambles.length)];
+            let shuffled = currentScramble.w.split('').sort(() => 0.5 - Math.random()).join('');
+            // Ensure it's actually scrambled
+            if(shuffled === currentScramble.w && shuffled.length > 2) {
+                shuffled = shuffled.substring(1) + shuffled[0]; 
+            }
+            document.getElementById('scramble-word').innerText = shuffled;
+            document.getElementById('scramble-hint').innerText = currentScramble.h;
+            document.getElementById('scramble-input').value = '';
+            document.getElementById('scramble-msg').className = 'h-8 hidden';
+        }
+
+        function checkScramble() {
+            const input = document.getElementById('scramble-input').value.toUpperCase().trim();
+            const msg = document.getElementById('scramble-msg');
+            msg.classList.remove('hidden', 'text-danger', 'text-secondary');
+            
+            if (input === currentScramble.w) {
+                audio.sfxCorrect();
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                msg.innerText = "Correct! Great job!";
+                msg.classList.add('text-secondary');
+                setTimeout(goHome, 2000);
+            } else {
+                audio.sfxWrong();
+                msg.innerText = "Try again!";
+                msg.classList.add('text-danger');
+                document.getElementById('scramble-input').classList.add('animate-pulse');
+                setTimeout(() => document.getElementById('scramble-input').classList.remove('animate-pulse'), 500);
+            }
+        }
+
+        // --- STREAMING_CHUNK:Simulation Logic ---
+        const simData = [
+            { type: "Issue", text: "Recently, the government announced a plan to implement a full-day school system across the country. This policy requires students to stay at school from morning until late afternoon." },
+            { type: "Arguments For", text: "Supporters argue that full-day school keeps students engaged in positive activities, preventing them from negative influences outside. Moreover, it aligns with parents' working hours." },
+            { type: "Arguments Against", text: "However, many parents and experts disagree. They state that children need time for family, rest, and socializing in their neighborhood. An overly long school day can lead to stress and burnout." },
+            { type: "Conclusion", text: "In conclusion, while full-day school offers safety and structured learning, the government must consider children's mental health and family time before applying it universally." }
+        ];
+        let simTarget = "Arguments Against";
+
+        function startSimulation() {
+            // Setup Simulation when screen is shown via menu button
+            const container = document.getElementById('sim-text-container');
+            container.innerHTML = '';
+            
+            // Randomize target
+            const types = ["Issue", "Arguments For", "Arguments Against", "Conclusion"];
+            simTarget = types[Math.floor(Math.random() * types.length)];
+            document.getElementById('sim-target').innerText = simTarget;
+            document.getElementById('sim-feedback').classList.add('hide');
+
+            simData.forEach((para, index) => {
+                const div = document.createElement('div');
+                div.className = "p-4 bg-white border-2 border-slate-200 rounded-xl hover:border-primary hover:bg-indigo-50 transition";
+                div.innerText = para.text;
+                div.onclick = () => checkSimulation(para.type, div);
+                container.appendChild(div);
+            });
+        }
+        
+        // Hook into showScreen for Simulation initialization
+        const originalShowScreen = showScreen;
+        showScreen = function(id) {
+            if(id === 'screen-simulation') startSimulation();
+            originalShowScreen(id);
+        }
+
+        function checkSimulation(selectedType, element) {
+            const fb = document.getElementById('sim-feedback');
+            fb.classList.remove('hide', 'bg-emerald-100', 'text-emerald-800', 'bg-red-100', 'text-red-800');
+            
+            // Reset all borders
+            document.querySelectorAll('#sim-text-container > div').forEach(el => el.classList.replace('border-primary', 'border-slate-200'));
+
+            if (selectedType === simTarget) {
+                audio.sfxCorrect();
+                element.classList.replace('border-slate-200', 'border-secondary');
+                element.classList.add('bg-emerald-50');
+                fb.classList.add('bg-emerald-100', 'text-emerald-800');
+                fb.innerHTML = '<i class="fa-solid fa-check-circle mr-2"></i> Correct! You identified the structure perfectly.';
+                confetti({ particleCount: 50, spread: 60 });
+                setTimeout(goHome, 3000);
+            } else {
+                audio.sfxWrong();
+                element.classList.replace('border-slate-200', 'border-danger');
+                fb.classList.add('bg-red-100', 'text-red-800');
+                fb.innerHTML = `<i class="fa-solid fa-xmark-circle mr-2"></i> Oops! That paragraph is actually the <b>${selectedType}</b>. Try finding the ${simTarget}.`;
+            }
+        }
+
+        // --- STREAMING_CHUNK:Quiz Engine Logic ---
+        let currentQuestions = [];
+        
+        function startQuiz() {
+            State.currentModule = 'quiz';
+            currentQuestions = [...quizQuestions]; // Make a copy
+            State.quizData = { currentQuestionIndex: 0, score: 0 };
+            
+            document.getElementById('quiz-mode-label').innerHTML = '<i class="fa-solid fa-gamepad text-secondary mr-2"></i> Learning Quiz';
+            document.getElementById('quiz-mode-label').className = "bg-white px-4 py-2 rounded-full font-bold text-slate-600 shadow-sm border border-slate-200";
+            
+            showScreen('screen-quiz');
+            audio.sfxClick();
+            renderQuestion();
+        }
+
+        function startExam() {
+            State.currentModule = 'exam';
+            currentQuestions = [...examQuestions]; 
+            State.examData = { currentQuestionIndex: 0, score: 0, answers: {} };
+            
+            document.getElementById('quiz-mode-label').innerHTML = '<i class="fa-solid fa-trophy text-danger mr-2"></i> Final Exam';
+            document.getElementById('quiz-mode-label').className = "bg-red-50 px-4 py-2 rounded-full font-bold text-danger shadow-sm border border-red-200 animate-pulse";
+            
+            showScreen('screen-quiz');
+            audio.sfxClick();
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const isQuiz = State.currentModule === 'quiz';
+            const data = isQuiz ? State.quizData : State.examData;
+            const q = currentQuestions[data.currentQuestionIndex];
+            
+            document.getElementById('q-current').innerText = data.currentQuestionIndex + 1;
+            document.getElementById('q-total').innerText = currentQuestions.length;
+            
+            const progress = ((data.currentQuestionIndex) / currentQuestions.length) * 100;
+            document.getElementById('quiz-progress').style.width = `${progress}%`;
+            
+            // Format question text with instruction based on type
+            let qTextDisplay = q.text;
+            if(q.type === 'mcma') qTextDisplay += ' <span class="text-sm text-primary font-normal block mt-1">(Select multiple answers)</span>';
+            if(q.type === 'category') qTextDisplay += ' <span class="text-sm text-primary font-normal block mt-1">(Select the correct category)</span>';
+            
+            document.getElementById('q-text').innerHTML = qTextDisplay;
+            const optionsContainer = document.getElementById('q-options');
+            optionsContainer.innerHTML = '';
+
+            if (q.type === 'mc') {
+                q.options.forEach((opt, idx) => {
+                    optionsContainer.innerHTML += `
+                        <label class="block relative cursor-pointer group">
+                            <input type="radio" name="q-ans" value="${idx}" class="peer sr-only custom-radio">
+                            <div class="p-4 rounded-xl border-2 border-slate-200 bg-white group-hover:border-indigo-300 transition flex items-center gap-4">
+                                <div class="w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center shrink-0">
+                                    <div class="w-3 h-3 rounded-full radio-inner scale-0 transition-transform"></div>
+                                </div>
+                                <span class="text-slate-700 font-medium">${opt}</span>
+                            </div>
+                        </label>
+                    `;
+                });
+            } else if (q.type === 'mcma') {
+                q.options.forEach((opt, idx) => {
+                    optionsContainer.innerHTML += `
+                        <label class="block relative cursor-pointer group">
+                            <input type="checkbox" name="q-ans" value="${idx}" class="peer sr-only custom-checkbox">
+                            <div class="p-4 rounded-xl border-2 border-slate-200 bg-white group-hover:border-emerald-300 transition flex items-center gap-4">
+                                <div class="w-6 h-6 rounded border-2 border-slate-300 flex items-center justify-center shrink-0 bg-white">
+                                    <i class="fa-solid fa-check text-white text-xs opacity-0 check-icon transition-all"></i>
+                                </div>
+                                <span class="text-slate-700 font-medium">${opt}</span>
+                            </div>
+                        </label>
+                    `;
+                });
+            } else if (q.type === 'category') {
+                optionsContainer.innerHTML = `<div class="grid grid-cols-1 gap-3"></div>`;
+                const grid = optionsContainer.querySelector('div');
+                q.categories.forEach((cat, idx) => {
+                    grid.innerHTML += `
+                        <label class="block relative cursor-pointer group">
+                            <input type="radio" name="q-ans" value="${idx}" class="peer sr-only custom-radio">
+                            <div class="p-4 rounded-xl border-2 border-slate-200 bg-white text-center group-hover:border-indigo-300 transition">
+                                <div class="hidden radio-inner"></div> <!-- Needed for CSS selector but hidden here -->
+                                <span class="text-slate-700 font-bold">${cat}</span>
+                            </div>
+                        </label>
+                    `;
+                });
+            }
+            
+            // Auto-read question if audio enabled
+            if(State.audioEnabled) {
+                // strip html tags for reading
+                const plainText = q.text.replace(/<[^>]*>?/gm, '');
+                audio.speak(plainText);
+            }
+        }
+
+        function readCurrentQuestion() {
+            const isQuiz = State.currentModule === 'quiz';
+            const q = currentQuestions[isQuiz ? State.quizData.currentQuestionIndex : State.examData.currentQuestionIndex];
+            const plainText = q.text.replace(/<[^>]*>?/gm, '');
+            audio.speak(plainText);
+        }
+
+        function getSelectedAnswers(type) {
+            if (type === 'mc' || type === 'category') {
+                const checked = document.querySelector('input[name="q-ans"]:checked');
+                return checked ? parseInt(checked.value) : null;
+            } else if (type === 'mcma') {
+                const checked = document.querySelectorAll('input[name="q-ans"]:checked');
+                return Array.from(checked).map(cb => parseInt(cb.value));
+            }
+        }
+
+        function submitAnswer() {
+            const isQuiz = State.currentModule === 'quiz';
+            const data = isQuiz ? State.quizData : State.examData;
+            const q = currentQuestions[data.currentQuestionIndex];
+            const ans = getSelectedAnswers(q.type);
+
+            if (ans === null || (Array.isArray(ans) && ans.length === 0)) {
+                // Shake button
+                const btn = document.getElementById('btn-submit-q');
+                btn.classList.add('animate-pulse', 'bg-red-500');
+                setTimeout(() => btn.classList.remove('animate-pulse', 'bg-red-500'), 500);
+                return;
+            }
+
+            audio.stopSpeak();
+            
+            // Check Answer
+            let isCorrect = false;
+            if (q.type === 'mc' || q.type === 'category') {
+                isCorrect = (ans === q.answer);
+            } else if (q.type === 'mcma') {
+                // Arrays must match exactly
+                if (ans.length === q.answer.length && ans.every(v => q.answer.includes(v))) {
+                    isCorrect = true;
+                }
+            }
+
+            if (isCorrect) data.score++;
+
+            if (isQuiz) {
+                showFeedback(isCorrect, q);
+            } else {
+                // Exam mode: no immediate feedback, just proceed
+                data.answers[q.id] = ans; // store answer
+                nextQuestionLogic();
+            }
+        }
+
+        // --- STREAMING_CHUNK:Feedback & Results ---
+        function showFeedback(isCorrect, q) {
+            const overlay = document.getElementById('feedback-overlay');
+            const modal = document.getElementById('feedback-modal');
+            const icon = document.getElementById('feedback-icon');
+            const title = document.getElementById('feedback-title');
+            const desc = document.getElementById('feedback-desc');
+
+            overlay.classList.remove('hidden');
+            // Small delay to allow display:flex to apply before animating opacity
+            requestAnimationFrame(() => {
+                overlay.classList.remove('opacity-0');
+                modal.classList.remove('scale-90');
+            });
+
+            if (isCorrect) {
+                audio.sfxCorrect();
+                icon.className = "w-20 h-20 rounded-full mx-auto flex items-center justify-center text-5xl mb-4 bg-emerald-100 text-secondary border-4 border-emerald-200";
+                icon.innerHTML = '<i class="fa-solid fa-star"></i>';
+                title.innerText = "Excellent!";
+                title.className = "text-3xl font-black mb-2 text-secondary";
+            } else {
+                audio.sfxWrong();
+                icon.className = "w-20 h-20 rounded-full mx-auto flex items-center justify-center text-5xl mb-4 bg-red-100 text-danger border-4 border-red-200";
+                icon.innerHTML = '<i class="fa-solid fa-rotate-right"></i>';
+                title.innerText = "Not quite right.";
+                title.className = "text-3xl font-black mb-2 text-danger";
+            }
+
+            // Construct explanation. For MCMA/Category need specific formatting if wanted, but explanation field covers it.
+            let explText = q.explanation || "Review the material again to strengthen your understanding.";
+            
+            // Provide correct answer context if wrong
+            if (!isCorrect) {
+                let correctStr = "";
+                if(q.type === 'mc') correctStr = q.options[q.answer];
+                else if (q.type === 'category') correctStr = q.categories[q.answer];
+                else if (q.type === 'mcma') correctStr = q.answer.map(idx => q.options[idx]).join('", "');
+                
+                desc.innerHTML = `<p class="mb-3">The correct answer involves: <b>"${correctStr}"</b></p><p class="text-sm bg-slate-50 p-3 rounded-lg border border-slate-200">${explText}</p>`;
+            } else {
+                desc.innerHTML = `<p class="text-sm bg-emerald-50 text-emerald-800 p-3 rounded-lg border border-emerald-200">${explText}</p>`;
+            }
+        }
+
+        function nextQuestion() {
+            // Hide feedback modal
+            const overlay = document.getElementById('feedback-overlay');
+            const modal = document.getElementById('feedback-modal');
+            overlay.classList.add('opacity-0');
+            modal.classList.add('scale-90');
+            
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                nextQuestionLogic();
+            }, 300);
+        }
+
+        function nextQuestionLogic() {
+            const isQuiz = State.currentModule === 'quiz';
+            const data = isQuiz ? State.quizData : State.examData;
+            
+            data.currentQuestionIndex++;
+            
+            if (data.currentQuestionIndex < currentQuestions.length) {
+                renderQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            const isQuiz = State.currentModule === 'quiz';
+            const data = isQuiz ? State.quizData : State.examData;
+            const maxScore = currentQuestions.length;
+            const finalScore = Math.round((data.score / maxScore) * 100);
+            
+            // Save to global state
+            if (isQuiz) State.currentUser.quizScore = finalScore;
+            else State.currentUser.examScore = finalScore;
+
+            showScreen('screen-result');
+            
+            // Animate Ring & Score
+            const ring = document.getElementById('score-ring');
+            ring.style.strokeDasharray = `${finalScore}, 100`;
+            
+            const scoreEl = document.getElementById('result-score');
+            let current = 0;
+            const timer = setInterval(() => {
+                current += 2;
+                if(current >= finalScore) {
+                    current = finalScore;
+                    clearInterval(timer);
+                    if(finalScore >= 70) {
+                        audio.sfxWin();
+                        confetti({ particleCount: 150, spread: 80, origin: { y: 0.4 } });
+                    }
+                }
+                scoreEl.innerText = current;
+            }, 20);
+
+            const title = document.getElementById('result-title');
+            const msg = document.getElementById('result-msg');
+
+            if (finalScore >= 80) {
+                title.innerText = "Outstanding!";
+                title.className = "text-3xl font-black mb-2 text-secondary";
+                msg.innerText = "You have a great grasp of Discussion Texts.";
+            } else if (finalScore >= 60) {
+                title.innerText = "Good Effort!";
+                title.className = "text-3xl font-black mb-2 text-primary";
+                msg.innerText = "Review the material once more to achieve perfection.";
+            } else {
+                title.innerText = "Keep Trying!";
+                title.className = "text-3xl font-black mb-2 text-accent";
+                msg.innerText = "Don't give up! Read the Material section carefully and try again.";
+            }
+
+            // Save to DB if Firebase is active and it's an exam (or both, let's save both)
+            saveScoreToCloud();
+        }
+
+        // --- STREAMING_CHUNK:Firebase Integration ---
+        async function saveScoreToCloud() {
+            if (!window.db || !window.auth.currentUser || window.firebaseError) return;
+            // Only save if Name is provided and not Admin
+            if (!State.currentUser.name || State.currentUser.name === 'GuruAdmin') return;
+
+            try {
+                const scoresRef = window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'scores');
+                await window.addDoc(scoresRef, {
+                    name: State.currentUser.name,
+                    class: State.currentUser.class,
+                    quizScore: State.currentUser.quizScore,
+                    examScore: State.currentUser.examScore,
+                    timestamp: window.serverTimestamp()
+                });
+                console.log("Score saved to cloud.");
+            } catch (e) {
+                console.error("Error saving score:", e);
+            }
+        }
+
+        let unsubscribeDashboard = null;
+
+        function loadDashboardData() {
+            if (!window.db || window.firebaseError) {
+                document.getElementById('db-table-body').innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500 font-bold bg-red-50"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Database connection failed. (Local Test Mode)</td></tr>`;
+                return;
+            }
+
+            const scoresRef = window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'scores');
+            // Rule 2: No complex queries. Fetch all, sort in memory.
+            
+            if (unsubscribeDashboard) unsubscribeDashboard();
+
+            unsubscribeDashboard = window.onSnapshot(scoresRef, (snapshot) => {
+                let data = [];
+                snapshot.forEach(doc => {
+                    let d = doc.data();
+                    d.id = doc.id;
+                    // Handle missing timestamps during local optimistic updates
+                    d.timeMs = d.timestamp ? d.timestamp.toMillis() : Date.now(); 
+                    data.push(d);
+                });
+
+                // Sort descending by time
+                data.sort((a, b) => b.timeMs - a.timeMs);
+
+                renderDashboardTable(data);
+            }, (error) => {
+                console.error("Dashboard Snapshot Error:", error);
+                document.getElementById('db-table-body').innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500">Error loading data. Check console.</td></tr>`;
+            });
+        }
+
+        function renderDashboardTable(data) {
+            const tbody = document.getElementById('db-table-body');
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-500">No student records found yet.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            data.forEach(row => {
+                const dateObj = new Date(row.timeMs);
+                const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                // Color code scores
+                const examColor = row.examScore >= 80 ? 'text-emerald-600 font-bold' : (row.examScore >= 60 ? 'text-amber-600' : 'text-red-500');
+
+                html += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-4 font-semibold text-slate-800">${row.name}</td>
+                        <td class="p-4"><span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs font-bold">${row.class}</span></td>
+                        <td class="p-4 text-center">${row.quizScore}%</td>
+                        <td class="p-4 text-center ${examColor}">${row.examScore}%</td>
+                        <td class="p-4 text-right text-sm text-slate-500">${dateStr}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // --- STREAMING_CHUNK:Export Functions ---
+        function getTableDataForExport() {
+            const rows = document.querySelectorAll('#export-target table tr');
+            const data = [];
+            rows.forEach((row, rowIndex) => {
+                const cols = row.querySelectorAll('th, td');
+                const rowData = [];
+                cols.forEach(col => {
+                    rowData.push(col.innerText.trim());
+                });
+                if(rowData.length > 0 && rowData[0] !== "No student records found yet." && !rowData[0].includes("Loading data")) {
+                    data.push(rowData);
+                }
+            });
+            return data;
+        }
+
+        function exportExcel() {
+            const data = getTableDataForExport();
+            if(data.length <= 1) return; // Only headers
+            
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Scores");
+            XLSX.writeFile(wb, "English_Scores_Report.xlsx");
+        }
+
+        function exportPDF() {
+            const element = document.getElementById('export-target');
+            const opt = {
+                margin:       10,
+                filename:     'English_Scores_Report.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function exportWord() {
+            const data = getTableDataForExport();
+            if(data.length <= 1) return;
+
+            // Construct simple HTML table for Word
+            let htmlContent = `
+                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head><meta charset='utf-8'><title>Student Scores</title>
+                <style>
+                    table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
+                    th, td { border: 1px solid black; padding: 8px; text-align: left; }
+                    th { background-color: #f2f2f2; }
+                </style>
+                </head><body>
+                <h2>English Discussion Text - Score Report</h2>
+                <table>
+            `;
+            
+            data.forEach((row, index) => {
+                htmlContent += "<tr>";
+                row.forEach(cell => {
+                    if(index === 0) htmlContent += `<th>${cell}</th>`;
+                    else htmlContent += `<td>${cell}</td>`;
+                });
+                htmlContent += "</tr>";
+            });
+            htmlContent += "</table></body></html>";
+
+            const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'English_Scores_Report.doc';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+    </script>
+</body>
+</html>
